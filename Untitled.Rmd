@@ -1,0 +1,78 @@
+---
+title: "Untitled"
+author: "Niels Krarup"
+date: "10/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+## Problem 1.4
+We have from ealier that: 
+$$D(x,y)=S_{1}(x)(e_{2}(x,y)-e_{1}(x,y))$$
+$$I(x,y)=S_{1}(y)e_{1}(y)(\frac{S_{2}(y|x)}{S_{1}(y|x)}-1)$$
+$$X(x,y)=S_{2}(y)(e_{2}(y)-e_{1}(y))(\frac{S_{1}(x)}{S_{2}(x)}-\frac{S_{1}(y)}{S_{2}(x)})$$
+
+We want to show that: 
+$$\sum_{i=0}^{n-1}\left[ D(x_i,x_{i+1}) + I(x_i,x_{i+1}) + X(x_i,x_{i+1}) \right] = e_{2}(0)-e_1(0)$$. 
+
+We have that:\\
+$D(x_i,x_{i+1})=S_{1}(x_{i})(e_{2}(x_{i},x_{i+1})-e_{1}(x_{i},x_{i+1}))\\
+=e^{-\int_{0}^{x_{i}}\mu_{1}(u)du}(\int_{x_{i}}^{x_{i+1}}S_{2}(z|x_{i})-S_{1}(z|x_{i})dz)\\ 
+= e^{-\int_{0}^{x_{i}}\mu_{1}(u)du}(\int_{x_{i}}^{x_{i+1}}\frac{e^{-\int_{0}^{z}\mu_{2}(u)du}}{e^{-\int_{0}^{x_{i}}\mu_{2}(u)du}}-\frac{e^{-\int_{0}^{z}\mu_{1}(u)du}}{e^{-\int_{0}^{x_{i}}\mu_{1}(u)du}}dz)\\ 
+= e^{\int_{0}^{x_{i}}\mu_{2}(u)-\mu_{1}(u)du}(\int_{x_{i}}^{x_{i+1}}e^{-\int_{0}^{z}\mu_{2}(u)du}-e^{-\int_{0}^{z}\mu_{1}(u)du}dz) \\
+=\frac{S_{1}(x_{i})}{S_{2}(x_{i})}\int_{x_{i}}^{x_{i+1}}S_{2}(u)du-\int_{x_{i}}^{x_{i+1}}S_{1}(u)du
+$\\
+
+By taking the the sum of that we get:\\
+
+$\sum_{i=0}^{n-1}[ D(x_i,x_{i+1})] = e_{2}(0)-e_{1}(0)-S_{2}(x_{1})e_{2}(x_{1})\\
++S_{1}(x_{1})e_{2}(x_{1})-\frac{S_{1}(x_{1})}{S_{2}(x_{1})}S_{2}(x_{2})e_{2}(x_{2})\\
++S_{1}(x_{2})e_{2}(x_{2})-\frac{S_{1}(x_{2})}{S_{2}(x_{2})}S_{2}(x_{3})e_{2}(x_{3})\\
+...\\
++S_{1}(x_{n-1})e_{2}(x_{n-1})-\frac{S_{1}(x_{n-1})}{S_{2}(x_{n-1})}S_{2}(x_{n})e_{2}(x_{n})
+$\\
+
+From that we observe that we have $e_{2}(0)-e_{1}(0)$, which must mean, that the sum over X+I and the other terms above must be equal to zero. So lets look at the sum over X+I: 
+
+$\sum_{i=0}^{n-1}[ I(x_i,x_{i+1})+ X(x_i,x_{i+1})]\\
+=-e_{1}(x_{1})S_{1}(x_{1})+e_{2}(x_{1})(\frac{S_{2}(x_{1})S_{1}(x_{0})}{S_{2}(x_{0})}-\frac{S_{2}(x_{1})S_{1}(x_{1})}{S_{2}(x_{0})})+e_{1}(x_{1})(\frac{S_{1}(x_{1})S_{2}(x_{1})}{S_{2}(x_{0})})\\
+-e_{1}(x_{2})S_{1}(x_{2})+e_{2}(x_{2})(\frac{S_{2}(x_{2})S_{1}(x_{1})}{S_{2}(x_{1})}-\frac{S_{2}(x_{2})S_{1}(x_{2})}{S_{2}(x_{1})})+e_{1}(x_{2})(\frac{S_{1}(x_{2})S_{2}(x_{2})}{S_{2}(x_{1})})\\
+...\\
+-e_{1}(x_{n})S_{1}(x_{n})+e_{2}(x_{n})(\frac{S_{2}(x_{n})S_{1}(x_{n-1})}{S_{2}(x_{n-1})}-\frac{S_{2}(x_{n})S_{1}(x_{n})}{S_{2}(x_{n-1})})+e_{1}(x_{n})(\frac{S_{1}(x_{n})S_{2}(x_{n})}{S_{2}(x_{n-1})}) 
+$\\
+
+So what we wanna show now is that:\\
+
+$-S_{2}(x_{1})e_{2}(x_{1})\\
++S_{1}(x_{1})e_{2}(x_{1})-\frac{S_{1}(x_{1})}{S_{2}(x_{1})}S_{2}(x_{2})e_{2}(x_{2})\\
++S_{1}(x_{2})e_{2}(x_{2})-\frac{S_{1}(x_{2})}{S_{2}(x_{2})}S_{2}(x_{3})e_{2}(x_{3})\\
+...\\
++S_{1}(x_{n-1})e_{2}(x_{n-1})-\frac{S_{1}(x_{n-1})}{S_{2}(x_{n-1})}S_{2}(x_{n})e_{2}(x_{n}) -e_{1}(x_{1})S_{1}(x_{1})+e_{2}(x_{1})(\frac{S_{2}(x_{1})S_{1}(x_{0})}{S_{2}(x_{0})}-\frac{S_{2}(x_{1})S_{1}(x_{1})}{S_{2}(x_{0})})+e_{1}(x_{1})(\frac{S_{1}(x_{1})S_{2}(x_{1})}{S_{2}(x_{0})})\\
+-e_{1}(x_{2})S_{1}(x_{2})+e_{2}(x_{2})(\frac{S_{2}(x_{2})S_{1}(x_{1})}{S_{2}(x_{1})}-\frac{S_{2}(x_{2})S_{1}(x_{2})}{S_{2}(x_{1})})+e_{1}(x_{2})(\frac{S_{1}(x_{2})S_{2}(x_{2})}{S_{2}(x_{1})})\\
+...\\
+-e_{1}(x_{n})S_{1}(x_{n})+e_{2}(x_{n})(\frac{S_{2}(x_{n})S_{1}(x_{n-1})}{S_{2}(x_{n-1})}-\frac{S_{2}(x_{n})S_{1}(x_{n})}{S_{2}(x_{n-1})})+e_{1}(x_{n})(\frac{S_{1}(x_{n})S_{2}(x_{n})}{S_{2}(x_{n-1})}) = 0$\\
+
+
+
+The relationship between Arriaga's decomposition and Pollard's decomposition is very similar. The age intervals must be finer and finer, since broad intervals will result in discrepancies between the 2 decomposition.
+Arriaga's approach is discreet and it is analytically easier to work with. However, there is the downside that it is not as accurate as Pollard's decomposition.
+
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

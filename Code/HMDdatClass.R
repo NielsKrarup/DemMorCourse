@@ -65,7 +65,7 @@ HMDdatClass$set("public", "initialize", function(Otxtfile, Etxtfile, groups = c(
         gidx <- gidx + 1L
     }
     
-    cat('Imported historic data for',private$.data$country,'\n')
+    cat('Imported historic data, (set public initialize) for',private$.data$country,'\n')
     cat('  - Groups     :', length(groups),'\n')
     cat('  - Age range  :', agelim[1L],'-',agelim[2L],"\n")
     cat('  - Year range :', timelim[1L],'-',timelim[2L],"\n")

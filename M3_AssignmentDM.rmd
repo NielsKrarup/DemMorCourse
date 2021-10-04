@@ -1,0 +1,576 @@
+---
+title: "Demography and Mortality"
+author: "xxx, yyy, zzz, Niels Moctezuma Krarup"
+date: "3 october 2021"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
+#knitr::opts_knit$set(root.dir = "/Users/nielskrarup/Desktop/UNI/courses/DemMorCourse/" )
+
+library("survival")
+library("timereg")
+library("SASxport")
+library("dplyr")
+library("purrr")
+library("lattice")
+library("hexbin")
+library("ggplot2")
+library("MASS")
+library(gridExtra)
+library(pander)
+
+```
+
+
+\section{Part 1}
+#Part1
+Let the setup and notation be as stated in the assignment.
+
+\subsection{1.1)}
+## Problem 1.1
+From the definition of the expected residual life, $e_i(0) = \int_0^\infty S_i(u|0)du = \int_0^\infty \frac{S_i(u)}{S_i(0)}du = \int_0^\infty S_i(u)du$, since $S_i(0) = 1$. For ease of notation write $M_i = M_i(u) = \int_0^u\mu_i(z)dz, \quad i = 1,2$ we have
+
+\begin{align*}
+e_2(0) - e_1(0)  &= \int_0^\infty e^{-M_2}du - \int_0^\infty e^{-M_1}du \\
+                 &= \int_0^\infty e^{-M_2} - e^{-M_1}du  \\
+                 &= \int_0^\infty \left[  e^{M_1-M_2} - 1\right] e^{-M_1}du 
+\end{align*}
+Now, since $e^{-M_1} = S_1(u)$ and noting that 
+$$ \frac{d}{du} -S_1(u)e_i(u) = 
+\frac{d}{du} -S_1(u)\int_u^\infty \frac{S_1(z)}{S_1(u)}du =
+\frac{d}{du} -\int_u^\infty S_1(z)dz = S_1(u),$$
+
+by the fundamental theorem of calculus and switching limits of the integral. Then using integration by parts we get
+\begin{align*}
+\int_0^\infty \left[  e^{M_1-M_2} - 1\right] e^{-M_1}du   &= 
+\left[ (e^{M_1-M_2}-1)(-S_1(u)e_1(u)) \right]_0^\infty - \int_0^\infty (M_1 - M_2)^\prime e^{M_1 - M_2}(-S_1(u)e_1(u))du     \\
+&= \int_0^\infty (\mu_1(u) - \mu_2(u)) e^{\int_0^u \mu_1(v) - \mu_2(v)dv}S_1(u)e_1(u)du
+\end{align*}
+
+## Problem 1.2 
+For this subproblem we will mainly be using Appendix 3.1 on page 69, in wich we find several expressions for the terms used in Arriagas decomposition. 
+
+First we will look at the Direct effect term. 
+We start off by inserting expressions from p.69 for $n L_{x}$ in the decomposition. And we get: 
+
+$$ \frac{l_{x}^{1}}{l_{0}^{1}} \left( \frac{l_{x}^{2} \int_{x}^{y} e^{- \int_{x}^{a} \mu_{2} (u) du} da}{l_{x}^{2}} - 
+\frac{l_{x}^{1} \int_{x}^{y} e^{- \int_{x}^{a} \mu_{1} (u) du} da}{l_{x}^{1}} \right) $$ 
+
+We see that $l_{x}^{2}$ and $l_{x}^{1}$ terms cancel out in the fractions. As they cancel out and as we use a expression from p.69 for $l_{x}^{1}$ in insert in the fraction outside of the pharentesis, we get: 
+
+$$ \frac{l_{0}^{1} e^{ - \int_{0}^{x} \mu_{1} (u)du }}{l_{0}^{1}} \left( \int_{x}^{y} e^{- \int_{x}^{a} \mu_{2} (u) du} - e^{- \int_{x}^{a} \mu_{1} (u) du} da \right) $$
+
+And as $ l_{0}^{1}$ cancel out in the fraction, we see that the exponential term in the nominator is actually a survival function and my using some basic rules of integrations we then get the following equations: 
+
+$$ S_{1} (x) \cdot \left(  \int_{x}^{y} \left( \frac{e^{- \int_{0}^{x} \mu_{2} (u) du - \int_{x}^{a} \mu_{2} (u) du} } {e^{- \int_{0}^{x} \mu_{2} (u) du}} - 
+\frac{e^{- \int_{0}^{x} \mu_{1} (u) du - \int_{x}^{a} \mu_{1} (u) du} } {e^{- \int_{0}^{x} \mu_{2} (u) du}} \right)da  \right) $$. 
+$$ = 
+S_{1} (x) \cdot \left( \int_{x}^{y} \frac{e^{- \int_{0}^{a} \mu_{2} (u) du}}{e^{- \int_{0}^{x} \mu_{2} (u) du}} - \frac{e^{- \int_{0}^{a} \mu_{1} (u) du}}{e^{- \int_{0}^{x} \mu_{1} (u) du}} da \right) $$ . $$ S_{1} (x) \left( \int_{x}^{y} \frac{S_{2}(a)}{S_{2}(x)} - 
+\frac{S_{1}(a)}{S_{1}(x)} \right) da = S_{1} (x)
+\left( \int_{x}^{y} S_{2} (a|x) - 
+S_{1} (a|x) da \right) = S_{1} (x) \cdot \left( e_{2}(x,y) - e_{1}(x,y) \right) $$ 
+\\
+We have now expressed the direct effect in terms of our usual notation. 
+
+Next we will be looking at the expression for the indirect effect 
+
+First we will once again use the expressions from page 69. We see that $\frac{l_{x}}{l_{y}} = nP_{x} $ and after rearranging our fractions and then inserting that we get the following: 
+
+$$ \frac{T_{y}^{1}}{l_{0}^{1}} \cdot \left( e^{\int_{x}^{y} \mu_{1} (u) du} \cdot e^{- \int_{x}^{y} \mu_{2} (u) du} - 1 \right) $$ 
+
+Then by applying some integral rules we obtain the following: 
+
+$$ \frac{T_{y}^{1}}{l_{0}^{1}} \cdot \left( 
+\frac{e^{\int_{x}^{y} \mu_{1} (u) du} \cdot e^{- \int_{x}^{y} \mu_{1} (u) du}}{e^{-\int_{x}^{y} \mu_{1} (u) du}} \cdot \frac{e^{- \int_{x}^{y} \mu_{2} (u) du} \cdot e^{\int_{0}^{x} \mu_{2} (u) du}}{e^{\int_{0}^{x} \mu_{2} (u) du}} -1 \right) $$. 
+
+= $$ \frac{T_{y}^{1}}{l_{0}^{1}} \cdot \left( 
+\frac{1}{e^{-\int_{x}^{y} \mu_{1} (u) du}} \cdot 
+\frac{e^{- \int_{0}^{y} \mu_{2} (u) du}} {e^{\int_{0}^{x} \mu_{2} (u) du}} -1 \right) = \frac{T_{y}^{1}}{l_{0}^{1}} \cdot \left( 
+\frac{e^{- \int_{0}^{x} \mu_{1} (u) du}} {e^{-\int_{0}^{y} \mu_{1} (u) du}} \cdot S_{2} (y|x) -1 \right) $$ . 
+
+$$ = \frac{T_{y}^{1}}{l_{0}^{1}} \cdot \left( 
+\frac{S_{1}(x)}{S_{1}(y)} \cdot S_{2} (y|x) -1 \right) $$ 
+
+We only need to think about the fraction outside of the pharentesis now . We have that $T_{y}^{1} = e_{y}^{1} \cdot l_{y}^{1}$ and that $l_{y}^{1} = l^{1} (0) \cdot e^{- \int_{0}^{y} \mu_{1} (u) du}$ So by that we get: 
+
+$$ \frac{e_{y} l^{1} (0) \cdot e^{- \int_{0}^{y} \mu_{1} (u) du} }{l_{0}^{1}} \cdot \left( \frac{S_{1}(x)}{S_{1}(y)} \cdot S_{2} (y|x) -1 \right) = e_{y} \cdot S_{1} (y) \left( \frac{S_{1}(x)}{S_{1}(y)} \cdot S_{2} (y|x) -1 \right) = = e_{y}^{1} \cdot S_{1} (x) \cdot S_{2} (y|x) - e_{y}^{1} \cdot S_{1} (y) $$. 
+
+
+We finally just need to write the last part of the decomposition. The interaction effect. We have looked at $T_{y}$ and for $l_{y}$ before and we will use the same again and get following: 
+
+$$ X(x,y)= \left( \frac{e_{y}^{2} \cdot l_{y}^{2} - e_{y}^{1} \cdot l_{y}^{1} \frac{l_{y}^{2}}{l_{y}^{1}}}{l_{0}^{1}} \right) \cdot \left( \frac{l_{x}^{1}}{l_{x}^{2}} - \frac{l_{y}^{1}}{l_{y}^{2}} \right) = l^{2} (0) e^{- \int_{0}^{y} \mu_{2} (u) du} \cdot \left(   \frac{e_{y}^{2} - e_{y}^{1}}{l_{0}^{1}} \right)  \cdot  \left( \frac{l_{x}^{1}}{l_{x}^{2}} - \frac{l_{y}^{1}}{l_{y}^{2}} \right) 
+$$. 
+
+$$  \frac{l_{0}^{2}}{l_{0}^{1}} \cdot S_{2} (y) \cdot \left(  e_{y}^{2} - e_{y}^{1} \right) \cdot \left( \frac{l_{x}^{1}}{l_{x}^{2}} - \frac{l_{y}^{1}}{l_{y}^{2}} \right) = S_{2} (y) \cdot \left(  e_{y}^{2} - e_{y}^{1} \right) \cdot \left( \frac{l_{0}^{2}}{l_{0}^{1}} \cdot \frac{l_{x}^{1}}{l_{x}^{2}} - \frac{l_{0}^{2}}{l_{0}^{1}} \cdot \frac{l_{y}^{1}}{l_{y}^{2}} \right) $$ . 
+
+$$ S_{2} (y) \cdot \left(  e_{y}^{2} - e_{y}^{1} \right) \left( \frac{l_{0}^{2}}{l_{0}^{1}} \cdot \frac{l^{1} (0) e^{- \int_{0}^{x} \mu_{1} (u) du}}{l^{2} (0) e^{- \int_{0}^{x} \mu_{2} (u) du}} - \frac{l_{0}^{2}}{l_{0}^{1}} \cdot \frac{l^{1} (0) e^{- \int_{0}^{y} \mu_{1} (u) du}}{l^{2} (0) e^{- \int_{0}^{y} \mu_{2} (u) du}} \right) $$ . 
+
+$$ S_{2} (y) \cdot \left(  e_{y}^{2} - e_{y}^{1} \right) \left( \frac{e^{- \int_{0}^{x} \mu_{1} (u) du}}{e^{- \int_{0}^{x} \mu_{2} (u) du}} - \frac{e^{- \int_{0}^{y} \mu_{1} (u) du}}{e^{- \int_{0}^{y} \mu_{2} (u) du}} \right) = S_{2} (y) \cdot \left(  e_{y}^{2} - e_{y}^{1} \right) \left(  \frac{S_{1} (x)}{S_{2} (x)} -  \frac{S_{1} (y)}{S_{2} (y)} \right)  $$ 
+## Problem 1.3
+
+We want to show that for any $x$ and $y$ with $x<y$
+$$D(x,y)+I(x,y)=A(x,y)$$
+We have from question 1.2 that 
+\begin{align*} 
+D(x,y) &= S_1(x)(e_2(x,y)-e_1(x,y)) \\
+I(x,y) &= e_1(y)S_1(x)S_2(y \mid x) - e_1(y)S_1(y) 
+\end{align*}
+
+
+Having a look at $D(x,y)$ we get by rewriting:
+\begin{align*}
+D(x,y) & = S_1(x)(e_2(x,y)-e_1(x,y)) \\
+& =  S_1(x)\left( \int_x^y S_2(z \mid x)dz - \int_x^y S_1(z \mid x) dz \right) \\
+& = S_1(x)\left( \int_x^y \frac{S_2(z)}{S_2(x)}dz - \int_x^y \frac{S_1(z)}{S_1(x)} dz \right)
+\end{align*}
+Inserting the expressions for $S_1(x)$ and $S_2(x)$ we get:
+
+\begin{align*}
+& = S_1(x)\left( \int_x^y \frac{e^{-\int_0^z \mu_2(u)du}}{e^{-\int_0^x \mu_2(u)du}}dz - \int_x^y \frac{e^{-\int_0^z \mu_1(u)du}}{e^{-\int_0^x \mu_1(u)du}} dz \right) \\
+& = S_1(x)\left( \int_x^y e^{-\int_0^z \mu_2(u)du +\int_0^x \mu_2(u)du}dz - \int_x^y e^{-\int_0^z \mu_1(u)du +\int_0^x \mu_1(u)du} dz \right) \\
+\end{align*}
+
+Using that $-\int_0^z f(z)dz + \int_0^x f(z)dz = - \int_0^z f(z)dz- \int_x^0 f(z)dz = -\int_x^z f(z)dz$ and collecting the integral over z we get
+
+\begin{align*} 
+& = S_1(x)\left( \int_x^y e^{-\int_x^z \mu_2(u)du} - e^{-\int_x^z \mu_1(u)du} dz \right) \\
+\end{align*}
+
+Writing out $S_1(x)$ and rearranging the terms we get: 
+\begin{align*}
+& = S_1(x)\left( \int_x^y \left(e^{-\int_x^z (\mu_2(u)-\mu_1(u))du} - 1 \right) e^{-\int_x^z \mu_1(u)du} dz \right) \\
+& = e^{-\int_0^x \mu_1(u)du}\left( \int_x^y \left(e^{\int_x^z (\mu_1(u)-\mu_2(u))du} - 1 \right) e^{-\int_x^z \mu_1(u)du} dz \right) \\
+& = \left( \int_x^y \left(e^{\int_x^z (\mu_1(u)-\mu_2(u))du} - 1 \right) e^{-\int_0^z \mu_1(u)du} dz \right) \\
+\end{align*}
+
+Using partial integration with $u(z)=e^{\int_x^z (\mu_1(u)-\mu_2(u))du} - 1$ and $v'(z)=e^{-\int_0^z \mu_1(u)du}$ we recognize $\int v'(z)dz =-S_1(z)e_1(z)$ since
+
+\begin{align*}
+v'(z) & = S_1(z) \\
+      & = \frac{d}{dz} - \int_z^{\infty} S_1(u) du \\
+      & = \frac{d}{dz} - S_1(z) \int_z^{\infty} \frac{S_1(u)}{S_1(z)} du \\
+      & = \frac{d}{dz} -S_1(z)e_1(z) 
+\end{align*}
+
+and 
+
+\begin{align*}
+\frac{d}{dz} u(z) & = \frac{d}{dz} e^{\int_x^z (\mu_1(u)-\mu_2(u))du} -1 \\
+    & = (\mu_1(z)-\mu_2(z)) e^{\int_x^z (\mu_1(u)-\mu_2(u))du}
+\end{align*}
+
+Collecting we thus get
+
+\begin{align*}
+\int_x^y u(z)v'(z) dz & = \left[u(z)v(z)\right]_x^z - \int_x^y u'(z)v(z) dz \\
+& =\left[\left(e^{\int_x^z (\mu_1(u)-\mu_2(u))du}-1\right)\left(-S_1(z)e_1(z)\right)\right]_x^y \\
+& \hspace{0.2 cm} - \int_x^y (\mu_1(z)-\mu_2(z)) e^{\int_x^z (\mu_1(u)-\mu_2(u))du}(-S_1(z)e_1(z)) \\
+& =\left[\left(e^{\int_x^z (\mu_1(u)-\mu_2(u))du}-1\right)\left(-S_1(z)e_1(z)\right)\right]_x^y \\
+& \hspace{0.2 cm} + \int_x^y (\mu_1(z)-\mu_2(z)) e^{\int_x^z (\mu_1(u)-\mu_2(u))du}S_1(z)e_1(z)
+\end{align*}
+
+We recognize the second term as $A(x,y)= \int_x^y (\mu_1(z)-\mu_2(z)) e^{\int_x^z (\mu_1(u)-\mu_2(u))du}S_1(z)e_1(z)$. So in order to show that $D(x,y)+I(x,y)=A(x,y)$ holds, we now need to show that $A(x,y)-D(x,y)=I(x,y)$ i.e. we need to show that
+
+\begin{align*}
+-\left[\left(e^{\int_x^z (\mu_1(u)-\mu_2(u))du}-1\right)\left(-S_1(z)e_1(z)\right)\right]_x^y = I(x,y)
+\end{align*}
+
+Rewriting the left hand side we get
+
+\begin{align*}
+& -\left[\left(e^{\int_x^z (\mu_1(u)-\mu_2(u))du}-1\right)\left(-S_1(z)e_1(z)\right)\right]_x^y \\
+ = & - \left(e^{\int_x^y \mu_1(u)-\mu_2(u) du} -1\right)(-S_1(y)e_1(y)) + 0 \\
+= &  \left(e^{\int_x^y \mu_1(u)-\mu_2(u) du} -1\right)(S_1(y)e_1(y)) \\
+ = & e^{\int_x^y \mu_1(u)-\mu_2(u) du}e^{-\int_0^y \mu_1(u)du}e_1(y) + S_1(y)e_1(y) \\
+ = & e^{-\int_x^y \mu_2(u) du + \int_x^y \mu_1(u)du -\int_0^y \mu_1(u)du}e_1(y) + S_1(y)e_1(y) \\
+\end{align*}
+
+Using that $-\int_x^y f(z)dz = - \int_0^y f(z)dz - \int_x^0 f(z)dz = - \int_0^y f(z)dz + \int_0^x f(z)dz$ and that $\int_x^y f(z)dz - \int_0^y f(z)dz = \int_x^y f(z)dz + \int_y^0 f(z)dz = \int_x^0 f(z)dz = - \int_0^x f(z)dz$ we get:
+
+\begin{align*}
+= & e^{-\int_0^y \mu_2(u) du + \int_0^x \mu_2(u)du} e^{ - \int_0^x \mu_1(u)du}e_1(y) + S_1(y)e_1(y) \\
+= & \frac{ e^{-\int_0^y \mu_2(u) du}}{e^{ - \int_0^x \mu_2(u)du}} S_1(x)e_1(y) + S_1(y)e_1(y) \\
+= & \frac{ S_2(y)}{S_2(x)} S_1(x)e_1(y) + S_1(y)e_1(y) \\
+= & S_2(y \mid x) S_1(x)e_1(y) + S_1(y)e_1(y) \\
+= & I(x,y)
+\end{align*}
+as wanted.
+
+\section*{1.7)}
+
+## Problem 1.5
+We want to make a Taylor expansion of $f(x) = e^{\int_0^x \mu_1(v)-\mu_2(v)dv}$ around $a=0$, i.e we want to calculate
+
+$$ f(a) + \frac{f'(a)}{1!}(x-a) + \frac{f''(a)}{2!}(x-a)^2 + ...$$
+We get:
+
+$$f(0) = e^{\int_0^0 \mu_1(v)-\mu_2(v)dv} = 1$$
+and 
+
+$$ f'(x) = e^{\int_0^x \mu_1(v)-\mu_2(v)dv} (\mu_1(x)-\mu_2(x))$$
+
+So the second term of the Taylor expansion is
+
+$$\frac{f'(0)}{1} (x-0)= e^{\int_0^0 \mu_1(v)-\mu_2(v)dv}(\mu_1(0)-\mu_(0))(x) =(\mu_1(0)-\mu_(0))x $$
+
+We get the Taylor expansion
+\begin{align*}
+& f(a) + \frac{f'(a)}{1!}(x-a) + \frac{f''(a)}{2!}(x-a)^2 + ... \\
+& = 1 + (\mu_1(0)-\mu_(0))x + ...
+& = f(x)
+\end{align*}
+
+Taking only the lead term we get that $f(x) \approx 1$ and thus we have our answer. This approximation will only be good if the two mortality rates are similar to each other, and would we not recommend this approximation unless it is assumed that the mortalities behave the same at age 0.
+
+## Problem 1.6 
+
+Direct effect: This is the effect that changes life expectancy within an age group due to mortality changes in the group.
+
+Indirect effect: when we have mortality change in an age group and that results in a change in the number of survivors by the end of the subgroup, This is then the number of life years we ADD to the life expectancy within the.
+
+Interaction effect: This is the rest of the effect that can not be appointed to the changes in mortality or life expectancy. It is a result of the years of life that are added because improved life expectancy results in additional survivors that will continue to live under the new mortality after the change in mortality.
+
+
+## Problem 1.7
+```{r,results='hide'}
+source("Code/structure.R")
+```
+
+Question 1.7: Compute and visualize the period life expectancy at birth for both sexes over the period 1835 − 2020.
+
+We start by creating an HMD object, with Dansih data, and using the corresponding class function "getSmoothMu" to get the smoothed mortality surface.
+
+
+```{r}
+
+HMDobj <- HMDdatClass$new(
+  Otxtfile = 'Data/DNK_Deaths_1x1.txt', 
+  Etxtfile = 'Data/DNK_Exposures_1x1.txt'
+  )
+
+surf_obj <- HMDobj$getSmoothMu()
+```
+
+
+From the surf object, we can use the aux-function "surf2lifeexp" to calculate Period life expectancies for all groups, ages = 0, and all times. 
+Then plot using the aux-function **life.exp.base** 
+
+```{r, fig.width=12}
+lifeexp_obj <- surf2lifeexp(surf = surf_obj, agelim = 0, type = "period")
+
+plot_dat_lifeexp <- reshape2::melt(lifeexp_obj$lifeexp , varnames = c("Group", "Age", "Year"), value.name = "PeriodLifeExp")
+
+ggplot(data = plot_dat_lifeexp, aes(x = Year, y = PeriodLifeExp, fill = Group)) + geom_bar(stat = "identity", position = position_dodge())
+
+ggplot(data = plot_dat_lifeexp, aes(x = Year, y = PeriodLifeExp, col = Group)) + geom_line()
+```
+
+\section{1.8}
+## Problem 1.8
+
+Question 1.8: Compute and visualize, using e.g. a bar plot, the average annual rate of mortality improvement for both sexes and the age groups and periods stated above.
+
+Mortality improvement rates is defined in Vaupel & Romo (2003) eq. (4) as 
+$$\rho(a,t) = -\acute{\mu}(a,t) = \frac{\frac{\partial}{\partial t}\mu(a,t)}{\mu(a,t)} = - \frac{d}{dt} log \mu(a,t)$$. 
+
+
+While the average pace of mortality improvement is defined in eq. (6):
+$$\bar{\rho}(t) = \int_0^\infty \rho(a,t) \mu(a,t) S(a,t) du = \int_0^\infty \rho(a,t) f(a,t) da$$
+
+Where $f(a,t)$ is the distribution of deaths among the period $t$ cohort.  
+Since we get data by 1x1 format, we are not able to get analytical expressions for the derivative wrt time or age for that matter.
+
+Hence we will use the observed data for the distribution of deaths, and the estimates from the smoothed $\mu$-surface, then using the approximation 
+$$
+\rho(a,t) \approx \frac{\mu(a, t+1)-\mu(a,t)}{\mu(a,t)}
+$$
+
+```{r,}
+#get deaths
+deaths <- HMDobj$getOEdata()
+HMDobj$initialize 
+
+
+
+```
+
+## Problem 2.1
+The pros of estimating the model by a poisson distribution instead of using the OLS approach is that we don't have to worry about handling empty cells, for example if there are zero deaths in a given year. Especially in small populations it is a good idea to use the poisson distribution. The cons of using the poisson distribution is that we may miss some information hidden in the data.
+
+## Problem 2.2
+
+```{r}
+
+HMDobj <- HMDdatClass$new(
+  Otxtfile = 'Data/GBRCENW_Deaths_1x1.txt', 
+  Etxtfile = 'Data/GBRCENW_Exposures_1x1.txt'
+  )
+
+surf_obj <- HMDobj$getSmoothMu()
+```
+Take both sexes for ages 20-100 in the years 1970-2018:
+```{r}
+OEdata <- HMDobj$getOEdata(agelim = c(20,100), timelim = c(1970, 2018))
+```
+
+We want to estimate the models parameters $\alpha_t$ and $\beta_t$ in the CBD model by using the Poisson assumption:
+
+$$ D(x,t)\mid E(x,t) \sim Poisson(E(x,t)\mu(x,t))$$
+We already know the exposures from our data, so we get the distribution by estimating $\mu(x,t)$ in terms of $\alpha$ and $beta$. We know that 
+
+$$ q(x,t)=1-exp(-\mu(x,t))$$
+
+and 
+
+$$\log\left( \frac{q(x,t)}{1-q(x,t)} \right) = \alpha_t + \beta_t(x-\bar{x})$$
+Inserting and isolating $\mu(x,t)$ we get:
+
+$$ \log\left( \frac{1-exp(-\mu(x,t))}{1-(1-exp(-\mu(x,t)))} \right) = \alpha_t + \beta_t(x-\bar{x})$$
+$$ \Leftrightarrow \frac{1-exp(-\mu(x,t))}{exp(-\mu(x,t)))} = exp(\alpha_t + \beta_t(x-\bar{x}))$$
+$$ \Leftrightarrow \frac{\frac{1}{exp(-\mu(x,t))}-\frac{exp(-\mu(x,t))}{exp(-\mu(x,t))}}{\frac{exp(-\mu(x,t)))}{exp(-\mu(x,t))}} = exp(\alpha_t + \beta_t(x-\bar{x}))$$
+$$ \Leftrightarrow \frac{\frac{1}{exp(-\mu(x,t))}-1}{1} = exp(\alpha_t + \beta_t(x-\bar{x}))$$
+$$ \Leftrightarrow \frac{1}{exp(-\mu(x,t))}-1 = exp(\alpha_t + \beta_t(x-\bar{x}))$$
+$$ \Leftrightarrow \frac{1}{exp(-\mu(x,t))} = exp(\alpha_t + \beta_t(x-\bar{x}))+1$$
+
+$$ \Leftrightarrow exp(-\mu(x,t)) = \frac{1}{exp(\alpha_t + \beta_t(x-\bar{x}))+1}$$
+$$ \Leftrightarrow -\mu(x,t) = \log \left(\frac{1}{exp(\alpha_t + \beta_t(x-\bar{x}))+1}\right)$$
+$$ \Leftrightarrow \mu(x,t) = -\log \left(\frac{1}{exp(\alpha_t + \beta_t(x-\bar{x}))+1}\right)$$
+Inserting this expression for $\mu(x,t)$ into the Poisson distribution, we want to estimate a Poisson distribution with the parameters: 
+
+$$ D(x,t)\mid E(x,t) \sim Poisson \left(E(x,t)\left(-\log \left(\frac{1}{exp(\alpha_t + \beta_t(x-\bar{x}))+1}\right)\right) \right)$$ 
+
+The estimators $\alpha_t$ and $\beta_t$ have 48 dimensions i.e. we get one parameter for each year.
+
+We get that the log-likelihood function for the Poisson distribution is(dropping the constant, since it doesn't make a difference in estimating $\alpha_t$ and $\beta_t$):
+
+$$ l(\lambda)=\sum_{t=1970}^{2018}\sum_{x=20}^{100} D_{t,x}\log\lambda_{t,x} - \lambda_{t,x}-\log D_{t,x}!  $$
+$$ \Leftrightarrow l((\alpha_{1970},\beta_{1970}),...,(\alpha_{2018},\beta_{2018}))$$
+$$= \sum_{t=1970}^{2018}\sum_{x=20}^{100} D_{t,x}\log\left(E(x,t)\left(-\log \left(\frac{1}{exp(\alpha_t + \beta_t(x-\bar{x}))+1}\right)\right) \right) - \left(E(x,t)\left(-\log \left(\frac{1}{exp(\alpha_t + \beta_t(x-\bar{x}))+1}\right)\right) \right)\\-\log D_{t,x}!$$
+
+$$= \sum_{t=1970}^{2018}\sum_{x=20}^{100} D_{t,x}\log\left(E(x,t) \log (exp(\alpha_t + \beta_t(x-\bar{x}))+1 ) \right) - \left(E(x,t)\log \left(exp(\alpha_t + \beta_t(x-\bar{x}))+1\right)\right)-\log D_{t,x}!$$
+
+Writing the log-likelihood and using optim to maximize minus the log-likelihood(same as minimizing the loglikelihood) we get:
+
+
+```{r}
+# Setup
+HMDobj <- HMDdatClass$new(Otxtfile = 'Data/GBRCENW_Deaths_1x1.txt', 
+                          Etxtfile = 'Data/GBRCENW_Exposures_1x1.txt')
+
+xmin <- 20
+xmax <- 100
+xvec <- xmin:xmax
+xbar <- sum(xvec)/(xmax-xmin+1) #mean of the agespan considered = 60
+
+tmin <- 1970
+tmax <- 2018
+
+# Log-likelihood funktion
+loglike <- function(par,Dvec,Evec,xvec) {
+    mu <- log(exp(par[1]+par[2]*(xvec-mean(xvec)))+1)
+    -sum(Dvec*log(mu)-Evec*mu)
+}
+
+Betahat <- matrix(NA, nrow = (tmax-tmin+1),ncol = 1)
+Alphahat <- matrix(NA, nrow = (tmax-tmin+1),ncol = 1)
+# Optimize minus log-likelihooden for females
+for(i in 1:(tmax-tmin+1)){
+  Dtest  <- OEdata$O["Female",,i] #    Dødsfald for kvinder i år i aldre xmin til xmax
+  Etest  <- OEdata$E["Female",,i] # Eksponering for kvinder i år i aldre xmin til xmax
+  opt <- optim(c(-4,0.1), function(par) loglike(par,Dtest,Etest,xvec))
+  Betahat[i] <- opt$par[2] # beta parametre under Poisson antagelsen for kvinder i år i
+  Alphahat[i] <- opt$par[1]# alpha  parametre under Poisson antagelsen for kvinder i år i
+}
+
+Betahat_f <- Betahat
+Alphahat_f <- Alphahat 
+
+Betahat <- matrix(NA, nrow = (tmax-tmin+1),ncol = 1)
+Alphahat <- matrix(NA, nrow = (tmax-tmin+1),ncol = 1)
+# Optimer minus log-likelihooden
+for(i in 1:(tmax-tmin+1)){
+  Dtest  <- OEdata$O["Male",,i] #    Dødsfald for kvinder i år i aldre xmin til xmax
+  Etest  <- OEdata$E["Male",,i] # Eksponering for kvinder i år i aldre xmin til xmax
+  opt <- optim(c(-4,0.1), function(par) loglike(par,Dtest,Etest,xvec))
+  Betahat[i] <- opt$par[2] # beta parametre under Poisson antagelsen for kvinder i år i
+  Alphahat[i] <- opt$par[1]# alpha  parametre under Poisson antagelsen for kvinder i år i
+}
+
+Betahat_m <- Betahat 
+Alphahat_m <- Alphahat
+
+Par_m <- cbind(Alphahat_m, Betahat_m)
+Par_f <- cbind(Alphahat_f, Betahat_f)
+
+```
+We have that number of deaths is Poisson distributed:
+$$ D(x,t)\mid E(x,t) \sim Poisson \left(E(x,t)\left(-\log \left(\frac{1}{exp(\alpha_t + \beta_t(x-\bar{x}))+1}\right)\right) \right)$$ 
+
+Calculating $\lambda = \log \left(exp(\alpha_t + \beta_t(x-\bar{x}))+1\right)$ we get the value for each year:
+```{r}
+age <- matrix(seq(xmin,xmax, by = 1),ncol = 1)
+lambda <- matrix(log(exp(Par_m[,1]+Par_m[,2]*(age[,1]-xbar))+1), nrow = 49, ncol = 81)
+lambda <- log(exp(Par_m[,1]+Par_m[,2]*(age[]-xbar))+1)
+```
+
+
+Mangler plot og sammenligning
+
+## Problem 2.3
+As in the original work (Cairns et al. (2006), p. 6), we use a two- dimensional random walk with drift to forecast the model. Estimate the model for each sex and state the parameters. In your opinion, is the use of a random walk structure justifiable?
+
+We want to forecast the model by using a two-dimensional random walk:
+
+$$A(t+1)=A(t)+\mu+CZ(t+1)$$
+where $\mu$ is a constant 2x1 matrix, C is an upper triangular matrix and Z(t) is a two-dimensional standard normal random variable. i.e. We want to estimate:
+\begin{align*}
+\left( \begin{array}{c}
+\alpha_{t+1} \\
+\beta_{t+1} \\
+\end{array} \right) = \left( \begin{array}{c}
+\alpha_t \\
+\beta_t \\
+\end{array} \right) + \left( \begin{array}{c}
+\theta_{\alpha} \\
+\theta_{\beta} \\
+\end{array} \right) + \epsilon_{t+1}
+\end{align*}
+
+where $\epsilon_{t+1} \sim \mathcal{N}(0, \Sigma)$
+
+```{r, echo = FALSE}
+#changing parameters from matrix to dataframe
+# females
+par_f_data <- as.data.frame(Par_f)
+par_f_data <- rename(par_f_data, alpha_f = V1)
+par_f_data <- rename(par_f_data, beta_f = V2)
+#males
+par_m_data <- as.data.frame(Par_m)
+par_m_data <- rename(par_m_data, alpha_m = V1)
+par_m_data <- rename(par_m_data, beta_m = V2)
+```
+
+
+We choose $\theta = (\theta_{\alpha}, \theta_{\beta})$ to be the difference between the last two observations:
+```{r}
+theta_f <- matrix(data = c(par_f_data$alpha_f[49]-par_f_data$alpha_f[48], par_f_data$beta_f[49]-par_f_data$beta_f[48]), nrow = 2, ncol = 1)
+theta_m <- matrix(data = c(par_m_data$alpha_m[49]-par_m_data$alpha_m[48], par_m_data$beta_m[49]-par_m_data$beta_m[48]), nrow = 2, ncol = 1)
+```
+
+We calculate $\Sigma$ as:
+
+\begin{align*}
+\Sigma = \left( \begin{array}{cc}
+                \sigma_{\alpha}^2 & \rho \sigma_{alpha}\sigma_{beta} \\
+                \rho \sigma_{alpha}\sigma_{beta} & \sigma_{beta}^2 \\
+                \end{array}\right)
+\end{align*}
+
+where $\rho$ is the correlation. Calculating we get:
+
+```{r}
+sigma_a_f <- var(par_f_data$alpha_f)
+sigma_b_f <- var(par_f_data$beta_f)
+cor_f <- cor(par_f_data$alpha_f, par_f_data$beta_f)
+
+Sigma_f <- matrix(c(sigma_a_f, cor_f*sqrt(sigma_a_f)*sqrt(sigma_a_f), cor_f*sqrt(sigma_a_f)*sqrt(sigma_a_f), sigma_b_f), nrow = 2, ncol = 2)
+
+sigma_a_m <- var(par_m_data$alpha_m)
+sigma_b_m <- var(par_m_data$beta_m)
+cor_m <- cor(par_m_data$beta_m, par_m_data$alpha_m, method = "kendall")
+Sigma_m <- matrix(c(sigma_a_m, cor_m*sqrt(sigma_a_m)*sqrt(sigma_a_m), cor_m*sqrt(sigma_a_m)*sqrt(sigma_a_m), sigma_b_m), nrow = 2, ncol = 2)
+```
+
+Simulating 100 values of the bivariate normal distribution with mean 0 and the empirical covariancematrix(since the covariance matrices above are not positive definite they cannot be used) for both men and women we get:
+```{r}
+n <- 100
+mean <- c(0,0)
+cov <- cov(data.frame(x = rnorm(100), y = rnorm(100)))
+norm <- mvrnorm(n = n, mu = mean, Sigma = cov)
+
+```
+We are now ready to create the random walk:
+```{r}
+A_0 <- c(par_f_data$alpha_f[49],par_f_data$beta_f[49])
+A <- matrix(NA, nrow = 100, ncol = 2)
+for(i in (1:100)){
+  A[i,1] <- A_0[1] + theta_f[1] + norm[i,1]
+  A[i,2] <- A_0[2] + theta_f[2] + norm[i,2]
+  A_0 <- c(A[i,1], A[i,2])
+}
+
+A_f <- A
+
+A_0 <- c(par_m_data$alpha_m[49],par_m_data$beta_m[49])
+A <- matrix(NA, nrow = 100, ncol = 2)
+for(i in (1:100)){
+  A[i,1] <- A_0[1] + theta_m[1] + norm[i,1]
+  A[i,2] <- A_0[2] + theta_m[2] + norm[i,2]
+  A_0 <- c(A[i,1], A[i,2])
+}
+A_m <- A
+```
+
+Og plotter:
+```{r}
+A_f_d <- as.data.frame(A_f)
+A_f_d <- rename(A_f_d, alpha_f = V1)
+A_f_d <- rename(A_f_d, beta_f = V2)
+
+A_m_d <- as.data.frame(A_m)
+A_m_d <- rename(A_m_d, alpha_m = V1)
+A_m_d <- rename(A_m_d, beta_m = V2)
+
+Years = seq(1,100, by = 1)
+A_collected <- cbind(A_m_d, A_f_d, Years)
+```
+
+Here we see the forecast for $\alpha$ for females(red) and males(green). We see that over time it just gets more negative.
+```{r}
+ggplot(A_collected, aes(Years)) +                    # basic graphical object
+  geom_line(aes(y=alpha_f), colour="red") +  # first layer
+  geom_line(aes(y=alpha_m), colour="green") 
+
+```
+
+Here we see the forecast for $\beta$ for females(red) and males(green). We see that over time it just gets more negative.
+```{r}
+ggplot(A_collected, aes(Years)) +                    # basic graphical object
+  geom_line(aes(y=beta_f), colour="red") +  # first layer
+  geom_line(aes(y=beta_m), colour="green") 
+
+```
+
+If we look at the historic values of $\alpha$ we get: 
+```{r}
+Years = seq(1970,2018, by = 1)
+Par_collected <- cbind(Par_m, Par_f,Years)
+Par_collected <- as.data.frame(Par_collected)
+Par_collected <- rename(Par_collected, alpha_m = V1)
+Par_collected <- rename(Par_collected, beta_m = V2)
+Par_collected <- rename(Par_collected, alpha_f = V3)
+Par_collected <- rename(Par_collected, beta_f = V4)
+```
+Plotting the historical values of $\alpha$ we get:
+```{r}
+ggplot(Par_collected, aes(Years)) +                    # basic graphical object
+  geom_line(aes(y=alpha_f), colour="red") +  # first layer
+  geom_line(aes(y=alpha_m), colour="green") 
+
+```
+
+Plotting the historical values for $\beta$ we get
+```{r}
+ggplot(Par_collected, aes(Years)) +                    # basic graphical object
+  geom_line(aes(y=beta_f), colour="red") +  # first layer
+  geom_line(aes(y=beta_m), colour="green") 
+
+```
+We see that historically $\alpha$ and $\beta$ are much more stable than they are in the random walk. This is mostly due to the empirical covariance matrix used. 
+
+In our opinion it is not justifiable to use a random walk to forecast the future of $\alpha$ and $\beta$. One of the main reasons we would not use random walk to forecast the future is, that there is no biological factor preventing the life expectancy to go to infinity in the future.
